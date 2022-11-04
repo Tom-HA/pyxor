@@ -1,5 +1,5 @@
 import click
-from parser import parser
+from internal import parser
 
 @click.command()
 @click.option('--expr', '-e', type=str, required=True, help='The expression to extract')
@@ -8,7 +8,7 @@ from parser import parser
               required=True,
               help='The name of a yaml file. If the file path is `-`, then the YAML content is read from stdin')
     
-def extract_yaml_value(file, expr):
+def extract_yaml_value(file: str, expr: str):
     with file:
         try:
             data = file.read()
