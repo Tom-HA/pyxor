@@ -1,2 +1,3 @@
-# pyser
-Python YAML Parser
+# Pyxor
+
+Python YAML Extractor
