@@ -8,8 +8,6 @@ def extract_values_from_yaml(stream, expression):
         values = []
         for match in jsonpath_expr.find(data):
             values.append(match.value)
-        print(values)
-        
         return values
     except yaml.YAMLError as e:
         print(e)
