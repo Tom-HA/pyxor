@@ -4,23 +4,33 @@ import uvicorn
 from pydantic import BaseModel
 from jsonpath_rw.lexer import JsonPathLexerError
 from yaml import YAMLError
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Response, status, Request
 from internal import parser
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"), format='%(levelname)s:\t\t%(message)s')
 app = FastAPI()
 
-class Extraction(BaseModel):
+class ExtractionRequest(BaseModel):
     text: str
     expr: str
-    
+
+@app.exception_handler(RequestValidationError)
+def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder({"data": "Invalid request"}),
+    )
+
 @app.get("/health")
 def health_check():
     return {"alive": "true"}
 
 
 @app.post("/api/yaml_extract")
-def extract_yaml(extraction: Extraction, response: Response):
+def extract_yaml(extraction: ExtractionRequest, response: Response):
     try:
         r = parser.extract_values_from_yaml(extraction.text, extraction.expr)
     except YAMLError as e:
