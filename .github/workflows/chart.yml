@@ -10,8 +10,8 @@ on:
       - 'charts/**'
   pull_request:
     branches: [main]
-    paths:
-      - 'charts/**'
+    # paths:
+    #   - 'charts/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -35,6 +35,16 @@ jobs:
       - name: lint chart
         run: | 
           helm lint charts/${PROJ_NAME}
+
+  Update-Chart:
+    name: Update Helm Chart
+    needs: [Lint_Chart]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v2
       - name: Set variables
         id: vars
         shell: bash
@@ -52,39 +62,26 @@ jobs:
             export "head_ref=${{ github.head_ref }}"
           fi
 
-          echo "::set-output name=VERSION::${version}"
-          echo "::set-output name=HEAD_REF::${head_ref}"
-    outputs:
-      VERSION: ${{ steps.vars.outputs.VERSION }}
-      HEAD_REF: ${{ steps.vars.outputs.HEAD_REF }}
+          echo "VERSION=${version}" >> $GITHUB_OUTPUT
+          echo "HEAD_REF=${head_ref}" >> $GITHUB_OUTPUT
+          echo "REPO_SLUG=ghcr.io/${repo_slug}" >> $GITHUB_ENV
 
-  Update-Chart:
-    name: Update Helm Chart
-    needs: [Lint_Chart]
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v3
+      - uses: azure/setup-helm@v3
         with:
-          go-version: '1.18'
-          check-latest: true
-      - uses: azure/setup-helm@v1
+          version: v3.9.0
         id: install
       - name: login to ghcr
         run: |
           helm registry login ghcr.io -u "${{ github.actor }}" -p "${{secrets.GITHUB_TOKEN}}"
       - name: update chart version
         run: |
-          sed -e "s/version:.*/version: \"${{ needs.Lint_Chart.outputs.VERSION }}\"/" -e "s/appVersion:.*/appVersion: \"${{ needs.Lint_Chart.outputs.VERSION }}\"/" charts/${PROJ_NAME}/Chart.yaml
+          sed -i -e "s/version:.*/version: \"${{ env.VERSION }}\"/" -e "s/appVersion:.*/appVersion: \"${{ env.VERSION }}\"/" charts/${PROJ_NAME}/Chart.yaml
       - name: package chart
         run: | 
           helm package charts/${PROJ_NAME}
       - name: publish chart
         run: | 
-          helm push "${PROJ_NAME}-${{ needs.Lint_Chart.outputs.VERSION }}.tgz"  oci://ghcr.io/"${GITHUB_REPOSITORY,,}"/${{ needs.Lint_Chart.outputs.VERSION }}/chart
+          helm push "${PROJ_NAME}-${{ env.VERSION }}.tgz"  oci://env.REPO_SLUG"/${{ env.VERSION }}/chart
   
 
 
