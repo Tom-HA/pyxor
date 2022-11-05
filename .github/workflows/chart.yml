@@ -42,7 +42,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set variables
         id: vars
         shell: bash
@@ -81,7 +81,7 @@ jobs:
           helm package charts/${PROJ_NAME}
       - name: publish chart
         run: | 
-          helm push "${PROJ_NAME}-${{ env.VERSION }}.tgz"  oci://env.REPO_SLUG"/${{ env.VERSION }}/chart
+          helm push "${PROJ_NAME}-${{ env.VERSION }}.tgz"  oci://${{ env.REPO_SLUG }}/${{ env.HEAD_REF }}/chart
   
 
 
