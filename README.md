@@ -46,7 +46,6 @@ make run
 This will a start `pyxor` as a server listening on port __5001__.  
 The API documentation is exposed at `http://localhost:5001/docs`.  
 
-
 ## Run CLI
 
 To run the CLI you can execute the following:
@@ -54,13 +53,13 @@ To run the CLI you can execute the following:
 ```sh
 . .venv/bin/activate # Activate the virtual env
 
-python3 pyxor/pyxor.py --expr root.child1.list --file example/test.yaml # Load YAML content from a file
+python3 pyxor/pyxor.py --expr root.child1.list --file <yaml-file-path> # Load YAML content from a file
 ```
 
 Or:
 
 ```sh
-python3 pyxor/pyxor.py --expr root.child1.list --file - < example/test.yaml # Load YAML content from stdin
+python3 pyxor/pyxor.py --expr root.child1.list --file - <yaml-content> # Load YAML content from stdin
 ```
 
 ### CLI usage
@@ -156,3 +155,59 @@ helm upgrade --install --create-namespace --namespace pyxor pyxor ./charts/pyxor
 
 ### Exposing pyxor with Traefik
 
+You can also expose `pyxor` using [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/).  
+Install the helm chart with `ingress.enabled` set to `true` and optionally specify the hostname:
+
+```sh
+helm upgrade --install --create-namespace --namespace pyxor pyxor ./charts/pyxor --set 'ingress.enabled=true' --set 'ingress.hosts[0].host=pyxor.local'
+```
+
+Assuming you followed the instructions in the [Create a local cluster](#create-a-local-kubernetes-cluster-using-k3d) section, you can modify your `hosts` file to access `pyxor`. For an example:
+
+```sh
+echo "127.0.0.1 pyxor.local" |sudo tee -a /etc/hosts
+```
+
+You should now be able to access `pyxor` at `http://pyxor.local`
+
+## Tests
+
+### Execute tests
+
+To test `pyxor` you can execute its test by running:
+
+```sh
+make test
+```
+
+This will executes the tests under the [tests](https://github.com/Tom-HA/pyxor/tree/main/tests) folder using [pytest](https://docs.pytest.org/en/7.2.x/).
+
+### Manually test the Web API
+
+You can manually test the web API by executing:
+
+```sh
+curl http://pyxor.local/api/yaml_extract --data-binary "@./example/request.json" -H "Content-Type: application/json"
+
+{"data":"element1"}
+```
+
+### Manually test the CLI
+
+You can manually test the CLI by executing:
+
+```sh
+. .venv/bin/activate # Activate the virtual env
+
+python3 pyxor/pyxor.py --expr root.child1.list --file example/test.yaml # Load YAML content from a file
+
+['element1', 'element2']
+```
+
+Or:
+
+```sh
+python3 pyxor/pyxor.py --expr root.child1.list --file - < example/test.yaml # Load YAML content from stdin
+
+['element1', 'element2']
+```
