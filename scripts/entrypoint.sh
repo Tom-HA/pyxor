@@ -8,7 +8,7 @@ if [[ $1 == "server" ]]; then
 elif [[ $1 == "bash" ]]; then
   /bin/bash
 else
-  python3 pyxor/command.py "$@"
+  python3 pyxor/pyxor.py "$@"
 fi
 
 

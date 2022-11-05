@@ -1,5 +1,5 @@
 from click.testing import CliRunner
-from pyxor.command import extract_yaml_value
+from pyxor.pyxor import extract_yaml_value
 
 def test_extract_yaml_value_stdin():
   runner = CliRunner()
