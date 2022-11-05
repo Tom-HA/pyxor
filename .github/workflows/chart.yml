@@ -10,8 +10,8 @@ on:
       - 'charts/**'
   pull_request:
     branches: [main]
-    # paths:
-    #   - 'charts/**'
+    paths:
+      - 'charts/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
