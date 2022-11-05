@@ -1,0 +1,148 @@
+---
+name: Build
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SEM_VER: "0.1.0"
+  PROJ_NAME: pyxor
+
+jobs:
+  Test_Code:
+    name: Test Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Test with pytest
+        run: |
+          pip install pytest
+          pip install pytest-cov
+          pytest tests.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+      - name: Set variables
+        id: vars
+        shell: bash
+        run: |
+          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
+            export commit_sha=${{ github.event.pull_request.head.sha }}
+          else
+            export commit_sha=${{ github.sha }}
+          fi
+          export version=$(echo ${SEM_VER}-${commit_sha:0:7})
+
+          if [[ -z "${{ github.head_ref }}" ]]; then
+            export "head_ref=main"
+          else
+            export "head_ref=${{ github.head_ref }}"
+          fi
+
+          echo "::set-output name=VERSION::${version}"
+          echo "::set-output name=HEAD_REF::${head_ref}"
+    outputs:
+      VERSION: ${{ steps.vars.outputs.VERSION }}
+      HEAD_REF: ${{ steps.vars.outputs.HEAD_REF }}
+  
+  Lint_Chart:
+    name: Test Helm Chart
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+          check-latest: true
+      - uses: azure/setup-helm@v1
+      - name: lint chart
+        run: | 
+          helm lint charts/${PROJ_NAME}
+
+  Package-Container:
+    name: Build a Docker/OCI image
+    runs-on: ubuntu-latest
+    needs: [Test_Code]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        
+      - name: Sanitize repo slug
+        uses: actions/github-script@v6
+        id: repo_slug
+        with:
+          result-encoding: string
+          script: return 'ghcr.io/${{ github.repository }}'.toLowerCase()
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.repo_slug.outputs.result }}/${{ needs.Test_Code.outputs.HEAD_REF }}/${{ env.PROJ_NAME }}:latest
+            ${{ steps.repo_slug.outputs.result }}/${{ needs.Test_Code.outputs.HEAD_REF }}/${{ env.PROJ_NAME }}:${{ needs.Test_Code.outputs.VERSION }}
+          cache-from: type=registry,ref=${{ steps.repo_slug.outputs.result }}/${{ needs.Test_Code.outputs.HEAD_REF }}/${{ env.PROJ_NAME }}:cache
+          cache-to: type=registry,ref=${{ steps.repo_slug.outputs.result }}/${{ needs.Test_Code.outputs.HEAD_REF }}/${{ env.PROJ_NAME }}:cache,mode=max
+
+
+  Update-Chart:
+    name: Update Helm Chart
+    needs: [Test_Code, Lint_Chart]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+          check-latest: true
+      - uses: azure/setup-helm@v1
+        id: install
+      - name: login to ghcr
+        run: |
+          helm registry login ghcr.io -u "${{ github.actor }}" -p "${{secrets.GITHUB_TOKEN}}"
+      - name: update chart version
+        run: |
+          sed -e "s/version:.*/version: \"${{ needs.Test_Code.outputs.VERSION }}\"/" -e "s/appVersion:.*/appVersion: \"${{ needs.Test_Code.outputs.VERSION }}\"/" charts/${PROJ_NAME}/Chart.yaml
+      - name: package chart
+        run: | 
+          helm package charts/${PROJ_NAME}
+      - name: publish chart
+        run: | 
+          helm push "${PROJ_NAME}-${{ needs.Test_Code.outputs.VERSION }}.tgz"  oci://ghcr.io/"${GITHUB_REPOSITORY,,}"/${{ needs.Test_Code.outputs.VERSION }}/chart
+  
+
+
