@@ -27,7 +27,7 @@ def test_extract_yaml_string():
             "expr": "root.child2.child2t"
         }
     )
-    assert response.json() == {"data": ['text']}
+    assert response.json() == {"data": 'text'}
     assert response.status_code == 200
 
 def test_extract_yaml_list_element():
@@ -48,7 +48,7 @@ def test_extract_yaml_list_element():
             "expr": "root.child1.list[0]"
         }
     )
-    assert response.json() == {"data": ['element1']}
+    assert response.json() == {"data": 'element1'}
     assert response.status_code == 200
     
 def test_extract_yaml_list():
@@ -69,7 +69,7 @@ def test_extract_yaml_list():
             "expr": "root.child1.list"
         }
     )
-    assert response.json() == {"data": [['element1', 'element2']]}
+    assert response.json() == {"data": ['element1', 'element2']}
     assert response.status_code == 200
 
 def test_extract_yaml_key_from_list_of_dicts():
@@ -90,7 +90,7 @@ def test_extract_yaml_key_from_list_of_dicts():
             "expr": "root.child1.listOfdicts[0].key1"
         }
     )
-    assert response.json() == {"data": ['element1']}
+    assert response.json() == {"data": 'element1'}
     assert response.status_code == 200
 
 def test_extract_yaml_key():
@@ -111,5 +111,5 @@ def test_extract_yaml_key():
             "expr": "root.child2"
         }
     )
-    assert response.json() == {"data": [{"child2t": "text"}]}
+    assert response.json() == {"data": {"child2t": "text"}}
     assert response.status_code == 200
