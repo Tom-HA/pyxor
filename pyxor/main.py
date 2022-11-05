@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from jsonpath_rw.lexer import JsonPathLexerError
 from yaml import YAMLError
 from fastapi import FastAPI, Response, status
-from fastapi.encoders import jsonable_encoder
 from internal import parser
 
 logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"), format='%(levelname)s:\t\t%(message)s')

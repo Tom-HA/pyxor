@@ -2,6 +2,17 @@
 
 Python YAML Extractor
 
+## Table of Contents
+
+* [Prerequisites](#prerequisites)
+* [Setup](#setup)
+* [Run Web API](#run-web-api)
+* [Run CLI](#run-cli)
+* [Build & Run Docker image](#build--run-docker-image)
+* [Local Kubernetes deployment](#local-kubernetes-deployment)
+* [Tests](#tests)
+* [Cleanup](#cleanup)
+
 ## Prerequisites
 
 To build and run this project, you will need the following:
@@ -16,6 +27,7 @@ docker-compose, and a local Kubernetes cluster, you will also need to:
 
 * Install [Docker engine](https://docs.docker.com/engine/install/)
 * Install [Docker Compose](https://docs.docker.com/compose/install/)
+* Install [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
 * Install a local Kubernetes cluster ([K3s with K3d](https://k3d.io/v5.4.6/#installation) is recommended)
 * Install [Helm](https://helm.sh/docs/intro/install/)
 
@@ -53,13 +65,17 @@ To run the CLI you can execute the following:
 ```sh
 . .venv/bin/activate # Activate the virtual env
 
-python3 pyxor/pyxor.py --expr root.child1.list --file <yaml-file-path> # Load YAML content from a file
+python3 pyxor/pyxor.py --expr root.child1.list --file example/test.yaml # Load YAML content from a file
+
+['element1', 'element2']
 ```
 
 Or:
 
 ```sh
-python3 pyxor/pyxor.py --expr root.child1.list --file - <yaml-content> # Load YAML content from stdin
+python3 pyxor/pyxor.py --expr root.child1.list --file - < example/test.yaml # Load YAML content from stdin
+
+['element1', 'element2']
 ```
 
 ### CLI usage
@@ -101,7 +117,7 @@ docker run -d --name pyxor -p 5001:5001 pyxor:local
 To use the CLI capabilities via the docker image, you execute the following:
 
 ```sh
-docker run -v ${PWD}/example/test.yaml:/tmp/test.yaml pyxor:local --expr root.child1.list --file /tmp/test.yaml
+docker run --rm -v ${PWD}/example/test.yaml:/tmp/test.yaml pyxor:local --expr root.child1.list --file /tmp/test.yaml
 ```
 
 In the above example we mount an example YAML file which can be found under [example/test.yaml](https://github.com/Tom-HA/pyxor/blob/main/example/test.yaml)
@@ -192,22 +208,50 @@ curl http://pyxor.local/api/yaml_extract --data-binary "@./example/request.json"
 {"data":"element1"}
 ```
 
-### Manually test the CLI
+## Cleanup
 
-You can manually test the CLI by executing:
+### Python files
+
+To cleanup the local virtual env and other python cache files, execute:
 
 ```sh
-. .venv/bin/activate # Activate the virtual env
-
-python3 pyxor/pyxor.py --expr root.child1.list --file example/test.yaml # Load YAML content from a file
-
-['element1', 'element2']
+make clean-up
 ```
 
-Or:
+### Docker container
+
+To cleanup the container, execute:
 
 ```sh
-python3 pyxor/pyxor.py --expr root.child1.list --file - < example/test.yaml # Load YAML content from stdin
+docker container rm -f pyxor
+```
 
-['element1', 'element2']
+### Docker compose
+
+To cleanup you can the docker compose, execute:
+
+```sh
+docker compose down
+```
+
+### Helm chart
+
+To uninstall the Helm chart, execute:
+
+```sh
+helm -n pyxor uninstall pyxor
+```
+
+To remove the namespace, execute:
+
+```sh
+kubectl delete namespace pyxor
+```
+
+### Local cluster
+
+To delete the local cluster, execute:
+
+```sh
+k3d cluster delete k3s-default
 ```
