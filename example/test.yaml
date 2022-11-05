@@ -1,0 +1,10 @@
+root:
+    child1:
+        list:
+            - element1
+            - element2
+        listOfdicts:
+            - key1: element1
+              key2: element2
+    child2:
+        child2t: "text"
