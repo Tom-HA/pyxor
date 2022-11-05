@@ -1,0 +1,90 @@
+---
+name: Update Helm Chart
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches: [main]
+    paths:
+      - 'charts/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'charts/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SEM_VER: "0.1.0"
+  PROJ_NAME: pyxor
+
+jobs:  
+  Lint_Chart:
+    name: Test Helm Chart
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+          check-latest: true
+      - uses: azure/setup-helm@v1
+      - name: lint chart
+        run: | 
+          helm lint charts/${PROJ_NAME}
+      - name: Set variables
+        id: vars
+        shell: bash
+        run: |
+          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
+            export commit_sha=${{ github.event.pull_request.head.sha }}
+          else
+            export commit_sha=${{ github.sha }}
+          fi
+          export version=$(echo ${SEM_VER}-${commit_sha:0:7})
+
+          if [[ -z "${{ github.head_ref }}" ]]; then
+            export "head_ref=main"
+          else
+            export "head_ref=${{ github.head_ref }}"
+          fi
+
+          echo "::set-output name=VERSION::${version}"
+          echo "::set-output name=HEAD_REF::${head_ref}"
+    outputs:
+      VERSION: ${{ steps.vars.outputs.VERSION }}
+      HEAD_REF: ${{ steps.vars.outputs.HEAD_REF }}
+
+  Update-Chart:
+    name: Update Helm Chart
+    needs: [Lint_Chart]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+          check-latest: true
+      - uses: azure/setup-helm@v1
+        id: install
+      - name: login to ghcr
+        run: |
+          helm registry login ghcr.io -u "${{ github.actor }}" -p "${{secrets.GITHUB_TOKEN}}"
+      - name: update chart version
+        run: |
+          sed -e "s/version:.*/version: \"${{ needs.Lint_Chart.outputs.VERSION }}\"/" -e "s/appVersion:.*/appVersion: \"${{ needs.Lint_Chart.outputs.VERSION }}\"/" charts/${PROJ_NAME}/Chart.yaml
+      - name: package chart
+        run: | 
+          helm package charts/${PROJ_NAME}
+      - name: publish chart
+        run: | 
+          helm push "${PROJ_NAME}-${{ needs.Lint_Chart.outputs.VERSION }}.tgz"  oci://ghcr.io/"${GITHUB_REPOSITORY,,}"/${{ needs.Lint_Chart.outputs.VERSION }}/chart
+  
+
+
