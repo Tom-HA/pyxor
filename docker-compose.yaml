@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  pyxor:
+    build: .
+    restart: on-failure
+    ports:
+      - 5001
+    deploy:
+      replicas: 2
+
+    healthcheck:
+      test: curl -f localhost:5001/health || exit 1
+      interval: 5s
+      timeout: 10s
+  
