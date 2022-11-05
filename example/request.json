@@ -1,0 +1,4 @@
+{
+  "text": "root:\n    child1:\n        list:\n            - element1\n            - element2\n        listOfdicts:\n            - key1: element1\n              key2: element2\n    child2:\n        child2t: \"text\"",
+  "expr": "root.child1.list[0]"
+}
