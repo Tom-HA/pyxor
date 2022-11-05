@@ -74,7 +74,7 @@ jobs:
 
           echo "VERSION=${version}" >> $GITHUB_ENV
           echo "HEAD_REF=${head_ref}" >> $GITHUB_ENV
-          echo "REPO_SLUG=${repo_slug}" >> $GITHUB_ENV
+          echo "REPO_SLUG=ghcr.io/${repo_slug}" >> $GITHUB_ENV
       
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -90,7 +90,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           push: true
