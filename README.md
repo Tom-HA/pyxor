@@ -1,7 +1,7 @@
 # Pyxor
 
-![main](https://github.com/Tom-HA/pyxor/actions/workflows/docker.yml/badge.svg?branch=main)
-![main](https://github.com/Tom-HA/pyxor/actions/workflows/chart.yml/badge.svg?branch=main)
+[![Build Container Image workflow](https://github.com/Tom-HA/pyxor/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/Tom-HA/pyxor/actions/workflows/docker.yml?query=branch%3Amain)
+[![Update Helm Chart workflow](https://github.com/Tom-HA/pyxor/actions/workflows/chart.yml/badge.svg?branch=main)](https://github.com/Tom-HA/pyxor/actions/workflows/chart.yml?query=branch%3Amain)
 
 Python YAML Extractor
 
