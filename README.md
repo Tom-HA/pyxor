@@ -1,5 +1,8 @@
 # Pyxor
 
+![main](https://github.com/Tom-HA/pyxor/actions/workflows/docker.yml/badge.svg?branch=main)
+![main](https://github.com/Tom-HA/pyxor/actions/workflows/chart.yml/badge.svg?branch=main)
+
 Python YAML Extractor
 
 ## Table of Contents

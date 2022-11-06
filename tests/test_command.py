@@ -5,7 +5,7 @@ def test_extract_yaml_value_stdin():
   runner = CliRunner()
   result = runner.invoke(extract_yaml_value, ["--expr", "root.child.text", "--file", "-"], input='root:\n    child:\n        text: test')
   print(result.output)
-  assert result.output == "test\n"
+  assert result.output == "{'data': 'test'}\n"
   assert result.exit_code == 0
 
 def test_extract_yaml_value_file():
@@ -16,5 +16,5 @@ def test_extract_yaml_value_file():
           f.write('root:\n    child:\n        text: test')
   
       result = runner.invoke(extract_yaml_value, ["--expr", "root.child.text", "--file", "test.yaml"])
-      assert result.output == "test\n"
+      assert result.output == "{'data': 'test'}\n"
       assert result.exit_code == 0
