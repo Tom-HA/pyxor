@@ -15,6 +15,6 @@ def extract_values_from_yaml(stream, expression):
     for match in jsonpath_expr.find(data):
         values.append(match.value)
     if len(values) == 1:
-        return values[0]
+        return {"data": values[0]}
     
-    return values
+    return {"data": values}

@@ -32,7 +32,7 @@ def health_check():
 @app.post("/api/yaml_extract")
 def extract_yaml(extraction: ExtractionRequest, response: Response):
     try:
-        r = parser.extract_values_from_yaml(extraction.text, extraction.expr)
+        resp = parser.extract_values_from_yaml(extraction.text, extraction.expr)
     except YAMLError as e:
         logging.warning(e)
         response.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -51,7 +51,6 @@ def extract_yaml(extraction: ExtractionRequest, response: Response):
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return {"data": "Unhandled exception"}
         
-    resp = {"data": r}
     return resp
     
 if __name__ == "__main__":
